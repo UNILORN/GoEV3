@@ -29,6 +29,7 @@ const (
 	speedSetterFD    = "speed_sp"
 	powerGetterFD    = "duty_cycle"
 	powerSetterFD    = "duty_cycle_sp"
+	positionSetterFD = "position_sp"
 	runFD            = "command"
 	stopModeFD       = "stop_command"
 	positionFD       = "position"
@@ -85,6 +86,29 @@ func Run(port OutPort, speed int16) {
 		utilities.WriteIntValue(folder, powerSetterFD, int64(speed))
 		utilities.WriteStringValue(folder, runFD, "run-forever")
 	}
+}
+
+func RunToAbsPosition(port OutPort, speed int16, porision int16) {
+	folder := findFolder(port)
+	regulationMode := utilities.ReadStringValue(folder, regulationModeFD)
+
+	switch regulationMode {
+	case "on":
+		utilities.WriteIntValue(folder, positionSetterFD, int64(porision))
+		utilities.WriteIntValue(folder, speedSetterFD, int64(speed))
+		utilities.WriteStringValue(folder, runFD, "run-to-abs-pos")
+	case "off":
+		if speed > 100 || speed < -100 {
+			log.Fatal("The speed must be in range [-100, 100]")
+		}
+		utilities.WriteIntValue(folder, positionSetterFD, int64(porision))
+		utilities.WriteIntValue(folder, powerSetterFD, int64(speed))
+		utilities.WriteStringValue(folder, runFD, "run-to-abs-pos")
+	}
+}
+
+func Reset(port OutPort) {
+	utilities.WriteStringValue(findFolder(port), runFD, "reset")
 }
 
 // Stops the motor at the given port.
