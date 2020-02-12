@@ -15,10 +15,10 @@ type InPort string
 const (
 	baseSensorPath = "/sys/class/lego-sensor"
 
-	InPort1 InPort = "in1"
-	InPort2        = "in2"
-	InPort3        = "in3"
-	InPort4        = "in4"
+	InPort1 InPort = "ev3-ports:in1"
+	InPort2        = "ev3-ports:in2"
+	InPort3        = "ev3-ports:in3"
+	InPort4        = "ev3-ports:in4"
 )
 
 // Constants for sensor types.
