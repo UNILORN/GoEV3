@@ -2,20 +2,21 @@
 package Motor
 
 import (
-	"github.com/ldmberman/GoEV3/utilities"
 	"log"
 	"os"
 	"path"
+
+	"github.com/ldmberman/GoEV3/utilities"
 )
 
 // Constants for output ports.
 type OutPort string
 
 const (
-	OutPortA OutPort = "A"
-	OutPortB         = "B"
-	OutPortC         = "C"
-	OutPortD         = "D"
+	OutPortA OutPort = "ev3-ports:outA"
+	OutPortB         = "ev3-ports:outB"
+	OutPortC         = "ev3-ports:outC"
+	OutPortD         = "ev3-ports:outD"
 )
 
 // Names of files which constitute the low-level motor API
@@ -47,12 +48,12 @@ func findFolder(port OutPort) string {
 	for _, folderInfo := range motorFolders {
 		folder := folderInfo.Name()
 		motorPort := utilities.ReadStringValue(path.Join(rootMotorPath, folder), portFD)
-		if motorPort == "out"+string(port) {
+		if motorPort == string(port) {
 			return path.Join(rootMotorPath, folder)
 		}
 	}
 
-	log.Fatal("No motor is connected to port ", port )
+	log.Fatal("No motor is connected to port ", port)
 	return ""
 }
 
