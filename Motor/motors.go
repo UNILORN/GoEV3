@@ -24,7 +24,6 @@ const (
 	rootMotorPath = "/sys/class/tacho-motor"
 	// File descriptors for getting/setting parameters
 	portFD           = "address"
-	regulationModeFD = "speed_regulation"
 	speedGetterFD    = "speed"
 	speedSetterFD    = "speed_sp"
 	powerGetterFD    = "duty_cycle"
@@ -33,6 +32,8 @@ const (
 	runFD            = "command"
 	stopModeFD       = "stop_command"
 	positionFD       = "position"
+	stopActionFD     = "stop_action"
+	stateGetter      = "state"
 )
 
 func findFolder(port OutPort) string {
@@ -73,38 +74,16 @@ func findFolder(port OutPort) string {
 // Negative values indicate reverse motion regardless of the regulation mode.
 func Run(port OutPort, speed int16) {
 	folder := findFolder(port)
-	regulationMode := utilities.ReadStringValue(folder, regulationModeFD)
-
-	switch regulationMode {
-	case "on":
-		utilities.WriteIntValue(folder, speedSetterFD, int64(speed))
-		utilities.WriteStringValue(folder, runFD, "run-forever")
-	case "off":
-		if speed > 100 || speed < -100 {
-			log.Fatal("The speed must be in range [-100, 100]")
-		}
-		utilities.WriteIntValue(folder, powerSetterFD, int64(speed))
-		utilities.WriteStringValue(folder, runFD, "run-forever")
-	}
+	utilities.WriteIntValue(folder, speedSetterFD, int64(speed))
+	utilities.WriteStringValue(folder, runFD, "run-forever")
 }
 
 func RunToAbsPosition(port OutPort, speed int16, porision int16) {
 	folder := findFolder(port)
-	regulationMode := utilities.ReadStringValue(folder, regulationModeFD)
-
-	switch regulationMode {
-	case "on":
-		utilities.WriteIntValue(folder, positionSetterFD, int64(porision))
-		utilities.WriteIntValue(folder, speedSetterFD, int64(speed))
-		utilities.WriteStringValue(folder, runFD, "run-to-abs-pos")
-	case "off":
-		if speed > 100 || speed < -100 {
-			log.Fatal("The speed must be in range [-100, 100]")
-		}
-		utilities.WriteIntValue(folder, positionSetterFD, int64(porision))
-		utilities.WriteIntValue(folder, powerSetterFD, int64(speed))
-		utilities.WriteStringValue(folder, runFD, "run-to-abs-pos")
-	}
+	utilities.WriteIntValue(folder, positionSetterFD, int64(porision))
+	utilities.WriteIntValue(folder, speedSetterFD, int64(speed))
+	utilities.WriteStringValue(folder, stopActionFD, "hold")
+	utilities.WriteStringValue(folder, runFD, "run-to-abs-pos")
 }
 
 func Reset(port OutPort) {
@@ -126,17 +105,6 @@ func CurrentPower(port OutPort) int16 {
 	return utilities.ReadInt16Value(findFolder(port), powerGetterFD)
 }
 
-// Enables regulation mode, causing the motor at the given port to compensate
-// for any resistance and maintain its target speed.
-func EnableRegulationMode(port OutPort) {
-	utilities.WriteStringValue(findFolder(port), regulationModeFD, "on")
-}
-
-// Disables regulation mode. Regulation mode is off by default.
-func DisableRegulationMode(port OutPort) {
-	utilities.WriteStringValue(findFolder(port), regulationModeFD, "off")
-}
-
 // Enables brake mode, causing the motor at the given port to brake to stops.
 func EnableBrakeMode(port OutPort) {
 	utilities.WriteStringValue(findFolder(port), stopModeFD, "brake")
@@ -155,4 +123,15 @@ func CurrentPosition(port OutPort) int32 {
 // Set the position of the motor at the given port.
 func InitializePosition(port OutPort, value int32) {
 	utilities.WriteIntValue(findFolder(port), positionFD, int64(value))
+}
+
+func HoldStopAction(port OutPort) {
+	utilities.WriteStringValue(findFolder(port), stopActionFD, "hold")
+}
+
+func CoastStopAction(port OutPort) {
+	utilities.WriteStringValue(findFolder(port), stopActionFD, "coast")
+}
+func GetState(port OutPort) string {
+	return utilities.ReadStringValue(findFolder(port), stateGetter)
 }
